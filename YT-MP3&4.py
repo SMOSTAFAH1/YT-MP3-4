@@ -1,56 +1,57 @@
 import yt_dlp
+import os
+from typing import Literal
 
-def download_video(url):
-    try:
-        ydl_opts = {
-            'format': 'bestvideo+bestaudio/best',
-            'outtmpl': 'downloads/videos/%(title)s.%(ext)s',
-            'http_headers': {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
-            }
-        }
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
-        print("Video downloaded successfully!")
-    except Exception as e:
-        print(f"Error downloading video: {e}")
-
-def download_audio(url):
-    try:
-        ydl_opts = {
-            'format': 'bestaudio/best',
-            'postprocessors': [{
+def get_download_options(content_type: Literal['video', 'audio']) -> dict:
+    """Retorna opciones de descarga según el tipo de contenido."""
+    base_path = f'downloads/{content_type}s'
+    os.makedirs(base_path, exist_ok=True)
+    
+    opts = {
+        'format': 'bestvideo+bestaudio/best' if content_type == 'video' else 'bestaudio/best',
+        'outtmpl': f'{base_path}/%(title)s.%(ext)s',
+        'http_headers': {'User-Agent': 'Mozilla/5.0'}
+    }
+    
+    if content_type == 'audio':
+        opts['postprocessors'] = [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
             'preferredquality': '192'
-            }],
-            'http_headers': {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
-            },
-            'preferredcodec': 'mp3',
-            'preferredquality': '192',
-            'outtmpl': 'downloads/audio/%(title)s.%(ext)s',
-        }
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        }]
+        
+    return opts
+
+def descargar(url: str, tipo: Literal['video', 'audio']) -> None:
+    """Descarga contenido desde URL."""
+    if not url.strip():
+        print("Error: URL vacía")
+        return
+        
+    try:
+        with yt_dlp.YoutubeDL(get_download_options(tipo)) as ydl:
+            print(f"Descargando {tipo}...")
             ydl.download([url])
-        print("Audio downloaded successfully!")
+            print(f"¡{tipo.capitalize()} descargado!")
     except Exception as e:
-        print(f"Error downloading audio: {e}")
+        print(f"Error: {str(e)}")
 
 def main():
-    url = input("Enter the URL of the video: ")
-    print("1. Download Video - MP4")
-    print("2. Download Audio - MP3")
-    try:
-        choice = int(input("Enter your choice: "))
-        if choice == 1:
-            download_video(url)
-        elif choice == 2:
-            download_audio(url)
+    """Función principal."""
+    while True:
+        url = input("\nURL del video (q para salir): ").strip()
+        if url.lower() == 'q':
+            break
+            
+        opcion = input("1. Video MP4\n2. Audio MP3\nElige (1/2): ").strip()
+        
+        if opcion in ('1', '2'):
+            descargar(url, 'video' if opcion == '1' else 'audio')
         else:
-            print("Invalid choice")
-    except ValueError:
-        print("Invalid input. Please enter a number.")
+            print("Opción inválida")
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\nPrograma terminado")

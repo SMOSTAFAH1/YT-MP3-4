@@ -10,16 +10,14 @@ def get_download_options(content_type: Literal['video', 'audio']) -> dict:
     opts = {
         'format': 'bestvideo+bestaudio/best' if content_type == 'video' else 'bestaudio/best',
         'outtmpl': f'{base_path}/%(title)s.%(ext)s',
-        'http_headers': {'User-Agent': 'Mozilla/5.0'}
-    }
-    
-    if content_type == 'audio':
-        opts['postprocessors'] = [{
+        'http_headers': {'User-Agent': 'Mozilla/5.0'},
+        'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
             'preferredquality': '192'
-        }]
-        
+        }] if content_type == 'audio' else []
+    }
+    
     return opts
 
 def descargar(url: str, tipo: Literal['video', 'audio']) -> None:
@@ -33,8 +31,10 @@ def descargar(url: str, tipo: Literal['video', 'audio']) -> None:
             print(f"Descargando {tipo}...")
             ydl.download([url])
             print(f"¡{tipo.capitalize()} descargado!")
+    except yt_dlp.utils.DownloadError as e:
+        print(f"Error de descarga: {str(e)}")
     except Exception as e:
-        print(f"Error: {str(e)}")
+        print(f"Error inesperado: {str(e)}")
 
 def main():
     """Función principal."""
